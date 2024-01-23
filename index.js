@@ -1,28 +1,46 @@
-// server.js
 const express = require('express');
 const app = express();
 const port = 3000;
 
-// Mock data for demonstration
-const users = [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }];
+app.use(express.json());
 
-app.get('/users', (req, res) => {
-  res.json(users);
-});
+app.post('/register', async (req, res) => {
+  const { email, password, username } = req.body;
 
-app.get('/add', (req, res) => {
-  const { num1, num2 } = req.query;
+  const url = "https://your-firebase-project-id.firebaseio.com/users.json";
 
-  if (num1 && num2) {
-    const sum = Number(num1) + Number(num2);
-    res.json({ result: sum });
-  } else {
-    res.status(400).json({ error: 'Please provide both num1 and num2 parameters' });
-  }
+  const uploadUser = async () => {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Add any other headers if needed, e.g., authentication headers
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          username: username,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('User uploaded successfully:', result);
+      res.json(result); // Respond to the client with the result
+    } catch (error) {
+      console.error('Error uploading user:', error);
+      res.status(500).json({ error: 'Internal Server Error' }); // Respond with an error status
+    }
+  };
+
+  uploadUser();
 });
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
 
-module.exports = app
