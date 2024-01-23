@@ -1,41 +1,41 @@
+// Install necessary npm packages
+// npm install express mongoose body-parser
+
 const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+
 const app = express();
 const port = 3000;
 
-app.use(express.json());
+// Connect to MongoDB
+mongoose.connect('mongodb+srv://kalmantamaskrisztian:usPOHbel3rtVRvwS@cluster0.bftsemb.mongodb.net/userinfos?retryWrites=true&w=majority');
 
-app.get('/register', async (req, res) => {
-  const { email, password, username } = req.body;
-  const url = "https://your-firebase-project-id.firebaseio.com/users.json";
+// Define a MongoDB schema and model
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+});
 
+const User = mongoose.model('User', userSchema);
+
+// Middleware to parse JSON requests
+app.use(bodyParser.json());
+
+// API endpoint to create a new user
+app.post('/api/users', async (req, res) => {
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Add any other headers if needed, e.g., authentication headers
-      },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-        username: username,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Server returned status ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('User uploaded successfully:', result);
-    res.json(result); // Respond to the client with the result
+    const { name, email } = req.body;
+    const newUser = new User({ name, email });
+    await newUser.save();
+    res.status(201).json(newUser);
   } catch (error) {
-    console.error('Error uploading user:', error);
-    res.status(500).json({ error: 'Internal Server Error' }); // Respond with an error status
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
+// Start the server
 app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
-
